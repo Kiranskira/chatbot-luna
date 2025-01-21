@@ -32,7 +32,7 @@ const ChatInput = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4">
+    <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-4">
         <textarea
           ref={textareaRef}
