@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import Markdown from 'react-markdown'
 
 type MessageType = {
     content: string;
@@ -26,7 +27,9 @@ const Message = ({ content, isUser, isLoading }: MessageType) => {
                     )}
                     <div className={`max-w-[70%] rounded-lg px-3${isUser ? ' text-gray-700' : ' font-light text-gray-800'
                         }`}>
-                        {content}
+                        <Markdown>
+                            {content}
+                        </Markdown>
                     </div>
                     {isUser && (
                         <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
