@@ -27,7 +27,7 @@ const ChatPage = () => {
                     <img className=' w-6 h-6' src="/icon.svg" alt="luna" />
                 </div>
 
-                <div className=' flex-1 flex overflow-y-auto'>
+                <div className=' flex-1 flex overflow-y-auto hide-scrollbar'>
 
                     <ChatSection />
 

@@ -1,3 +1,7 @@
 body{
     background-color: #EEEEEE;
 }
+
+.hide-scrollbar::-webkit-scrollbar{
+    display: none;
+}

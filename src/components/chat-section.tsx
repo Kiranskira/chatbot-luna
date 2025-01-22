@@ -1,29 +1,36 @@
-import React, { useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
-const Message = ({ content, isUser, isLoading }) => {
+type MessageType = {
+    content: string;
+    isUser: boolean;
+    isLoading: boolean;
+}
+
+const Message = ({ content, isUser, isLoading }: MessageType) => {
     return (
         <div className={`flex items-start gap-2 mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
             {isLoading && (
-                <div className="flex items-center gap-2 text-gray-500">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {content}
+                <div className=' flex h-fit items-center gap-2'>
+                    <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shadow-md">
+                        <img className=' w-5 animate-spin' src="/luna.svg" alt="avatar" />
+                    </div>
+                    <p className=' text-gray-500'>{content}</p>
                 </div>
             )}
             {!isLoading && (
                 <>
                     {!isUser && (
-                        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
-                            <span className="text-white text-sm">🤖</span>
+                        <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shadow-md">
+                            <img className=' w-5' src="/luna.svg" alt="avatar" />
                         </div>
                     )}
-                    <div className={`max-w-[70%] rounded-lg p-3 ${isUser ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-800'
+                    <div className={`max-w-[70%] rounded-lg px-3${isUser ? ' text-gray-700' : ' font-light text-gray-800'
                         }`}>
                         {content}
                     </div>
                     {isUser && (
                         <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-gray-600 text-sm">👤</span>
+                            <img className=' w-11' src="/avatar" alt="avatar" />
                         </div>
                     )}
                 </>
@@ -67,46 +74,7 @@ const ChatSection = () => {
             isUser: false,
             isLoading: true,
         },
-        {
-            content: "Yeah, that's perfect",
-            isUser: true,
-            isLoading: false,
-        },
-        {
-            content: "Sending email...",
-            isUser: false,
-            isLoading: true,
-        },
-        {
-            content: "Yeah, that's perfect",
-            isUser: true,
-            isLoading: false,
-        },
-        {
-            content: "Sending email...",
-            isUser: false,
-            isLoading: true,
-        },
-        {
-            content: "Yeah, that's perfect",
-            isUser: true,
-            isLoading: false,
-        },
-        {
-            content: "Sending email...",
-            isUser: false,
-            isLoading: true,
-        },
-        {
-            content: "Yeah, that's perfect",
-            isUser: true,
-            isLoading: false,
-        },
-        {
-            content: "Sending email...",
-            isUser: false,
-            isLoading: true,
-        },
+
 
     ];
 
