@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Image, Send } from 'lucide-react';
-import { Settings, CirclePlus } from 'lucide-react/icons'
+import { Send } from 'lucide-react';
+import { CirclePlus, FileText, X } from 'lucide-react';
 
 const ChatInput = () => {
   const [message, setMessage] = useState('');
+  const [file, setFile] = useState(null); // State to store the selected file
+  const [uploading, setUploading] = useState(false); // State to handle upload loading state
+  const [messageStatus, setMessageStatus] = useState(''); // State to display upload status
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -15,12 +19,61 @@ const ChatInput = () => {
     }
   }, [message]);
 
-  const handleSubmit = (e) => {
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0]; // Get the first selected file
+    if (selectedFile && selectedFile.type === 'application/pdf') {
+      setFile(selectedFile); // Set the file if it's a PDF
+      setMessageStatus(''); // Clear any previous messages
+    } else {
+      setFile(null); // Clear the file if it's not a PDF
+      setMessageStatus('Please select a valid PDF file.'); // Show an error message
+    }
+  };
+
+  // Remove the selected file
+  const handleRemoveFile = () => {
+    setFile(null); // Clear the file
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!message.trim() && !file) {
+      setMessageStatus('Please enter a message or select a file.');
+      return;
+    }
+
+    setUploading(true); // Start loading state
+    setMessageStatus('Uploading...');
+
+    const formData = new FormData();
+    if (file) {
+      formData.append('pdf', file); // Append the file to the FormData object
+    }
     if (message.trim()) {
-      // Handle message submission here
-      console.log('Message sent:', message);
-      setMessage('');
+      formData.append('message', message); // Append the message to the FormData object
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/upload', {
+        method: 'POST',
+        body: formData, // Send the FormData object
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setMessageStatus(result.message || 'File and message sent successfully!');
+      } else {
+        setMessageStatus('Failed to upload file or send message.');
+      }
+    } catch (error) {
+      setMessageStatus('An error occurred while uploading the file or sending the message.');
+      console.error('Upload error:', error);
+    } finally {
+      setUploading(false); // End loading state
+      setMessage(''); // Clear the message input
+      setFile(null); // Clear the selected file
     }
   };
 
@@ -45,32 +98,60 @@ const ChatInput = () => {
             lineHeight: '1.5',
           }}
         />
-        
+
         <div className="flex items-center gap-4 mt-4">
           <div className="flex gap-11">
-            <button
-              type="button"
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-base"
-            >
-              <CirclePlus strokeWidth={2} className="w-4 h-4" />
-              Add Attachments
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
-            >
-              <Image strokeWidth={2} className="w-4 h-4" />
-              Use Image
-            </button>
+            {/* Hidden file input */}
+            <input
+              type="file"
+              id="fileInput"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+              accept="application/pdf" // Only allow PDF files
+            />
+
+            {/* Show "Add Attachments" button only if no file is selected */}
+            {!file && (
+              <button
+                type="button"
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-base"
+                onClick={() => fileInputRef.current.click()}
+              >
+                <CirclePlus strokeWidth={2} className="w-4 h-4" />
+                Add Attachments
+              </button>
+            )}
+
+            {/* Display the selected PDF file */}
+            {file && (
+              <div className="relative border p-2 rounded-lg h-fit flex items-center gap-2 bg-slate-200 cursor-pointer hover:shadow-md">
+                <FileText className="text-red-600" />
+                <h1 className="text-sm font-bold text-gray-800">{file.name}</h1>
+                <button
+                  type="button"
+                  className="p-[2px] border rounded-full absolute top-[-8px] right-[-8px] bg-white hover:bg-red-600 hover:text-white transition-colors"
+                  onClick={handleRemoveFile}
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            )}
           </div>
-          
+
           <button
             type="submit"
-            className="ml-auto p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+            disabled={uploading}
+            className="ml-auto p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400"
           >
             <Send className="w-5 h-5 text-white" />
           </button>
         </div>
+
+        {/* Display upload status */}
+        {messageStatus && (
+          <p className="mt-4 text-sm text-gray-700">{messageStatus}</p>
+        )}
       </form>
     </div>
   );
