@@ -43,8 +43,8 @@ const Message = ({ content, isUser, isLoading }: MessageType) => {
 };
 
 const ChatSection = () => {
-    const messagesEndRef = useRef(null);
-    const containerRef = useRef(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const messages = [
         {
