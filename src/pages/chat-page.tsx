@@ -10,6 +10,7 @@ const ChatPage = () => {
   const [chatOption, setChatOption] = useState<ChatOptionType>(null);
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [loading, setLoading] = useState(false)
+  const [showConfirmButtons, setShowConfirmButtons] = useState<React.ReactElement | null>(null)
 
   return (
     <div className=" w-full h-screen flex">
@@ -38,7 +39,7 @@ const ChatPage = () => {
 
         <div className=" flex-1 flex overflow-y-auto hide-scrollbar">
           {messages.length > 0 ? (
-            <ChatSection loading={loading} messages={messages} />
+            <ChatSection showConfirmButtons={showConfirmButtons} loading={loading} messages={messages} />
           ) : (
             <EmptyChat />
           )}
@@ -53,7 +54,10 @@ const ChatPage = () => {
             messages={messages}
             setMessages={setMessages}
             setLoading={setLoading}
+            setShowConfirmButtons={setShowConfirmButtons}
           />
+
+          {/* <a href="http://localhost:3000/auth/google">login</a> */}
         </div>
       </div>
     </div>

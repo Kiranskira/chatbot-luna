@@ -19,6 +19,9 @@ type ChatInputProps = {
   messages: MessageType[];
   setMessages: React.Dispatch<React.SetStateAction<MessageType[]>>;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowConfirmButtons?: React.Dispatch<
+    React.SetStateAction<React.ReactElement | null>
+  >;
 };
 
 const ChatInput = ({
@@ -28,12 +31,15 @@ const ChatInput = ({
   chatOption,
   setMessages,
   setLoading,
+  setShowConfirmButtons,
 }: ChatInputProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const [messageStatus, setMessageStatus] = useState<string>("");
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(0); // Default to the first option
+  const [apiUrl, setApiUrl] = useState("http://localhost:3000/chat");
+  const [command, setCommand] = useState("");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,48 +92,132 @@ const ChatInput = ({
     setFile(null);
   };
 
+  useEffect(() => {
+    if (chatOption === "send-email") {
+      setApiUrl("http://localhost:3000/email");
+    } else if (chatOption === "assistance") {
+      setApiUrl("http://localhost:3000/chat");
+    } else if (chatOption === "commands & scripts") {
+      setApiUrl("http://localhost:3000/command");
+    }
+  }, [chatOption]);
+
+  const executeCommand = async (command: string) => {
+
+    console.log("Executing command:", command);
+    try {
+      const response = await fetch("http://localhost:3000/command/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command }),
+      });
+
+      if (!response.ok) throw new Error("Command execution failed.");
+
+      const data = await response.json();
+
+      console.log(data)
+
+    } catch (error) {
+      console.error(error);
+      setMessageStatus("Command execution failed.");
+    }
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setMessageStatus(""); // Reset message status
+
     if (!inputText.trim() && !file) {
-      setMessageStatus("Please enter a inputText or select a file.");
+      setMessageStatus("Please enter text or select a file.");
+      setLoading(false);
       return;
     }
 
     if (file) {
-      console.log("No file selected");
+      console.log("File selected:", file.name);
       const formData = new FormData();
       formData.append("pdf", file);
-    } else {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", content: inputText, loading: false },
-      ]);
 
-      const response = await fetch("http://localhost:4000/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          task: inputText,
-        }),
-      });
-      setInputText("");
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          body: formData, // Send the file
+        });
 
-      if (response.ok) {
+        if (!response.ok) throw new Error("File upload failed.");
+
         const data = await response.json();
         setMessages((prev) => [
           ...prev,
           {
             role: "bot",
-            content: data?.response.kwargs.content,
+            content: data?.response?.kwargs?.content,
             loading: false,
           },
         ]);
-      } else {
-        console.error("Message submission failed.");
+      } catch (error) {
+        console.error(error);
+        setMessageStatus("File upload failed.");
+      }
+    } else {
+      // Handling text input submission
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: inputText, loading: false },
+      ]);
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task: inputText }),
+        });
+
+        setInputText("");
+
+        if (!response.ok) throw new Error("Message submission failed.");
+
+        const data = await response.json();
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "bot",
+            content: data?.response?.kwargs?.content,
+            loading: false,
+          },
+        ]);
+
+        console.log("command => ", command)
+
+        if (chatOption === "commands & scripts") {
+          setCommand(data?.response?.kwargs?.content);
+          setShowConfirmButtons(
+            <>
+              <div className="flex flex-col gap-2 border-2 border-gray-300 p-4 rounded-lg">
+                <h1 className="text-sm font-semibold text-gray-800">
+                  Would you like to execute the command?
+                </h1>
+                <div className="flex gap-2">
+                  <button onClick={() => executeCommand(command)} className="flex-1 bg-gray-300 px-3 py-1 rounded-md hover:bg-gray-400">
+                    Yes
+                  </button>
+                  <button className="flex-1 bg-gray-300 px-3 py-1 rounded-md hover:bg-gray-400">
+                    No
+                  </button>
+                </div>
+              </div>
+            </>
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        setMessageStatus("Message submission failed.");
       }
     }
+
     setLoading(false);
   };
 

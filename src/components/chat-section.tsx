@@ -2,7 +2,12 @@ import { useEffect, useRef } from "react";
 import Markdown from "react-markdown";
 import { MessageType } from "../types";
 
-const Message = ({ content, loading, role }: MessageType) => {
+const Message = ({
+  content,
+  loading,
+  role,
+  ui,
+}: MessageType & { ui?: React.ReactElement }) => {
   return (
     <div
       className={`flex items-start gap-2 mb-4 w-full ${
@@ -17,6 +22,7 @@ const Message = ({ content, loading, role }: MessageType) => {
           <p className=" text-gray-500">{content}</p>
         </div>
       )}
+
       {!loading && (
         <>
           {role !== "user" && (
@@ -38,6 +44,7 @@ const Message = ({ content, loading, role }: MessageType) => {
           )}
         </>
       )}
+      {ui && ui}
     </div>
   );
 };
@@ -45,9 +52,11 @@ const Message = ({ content, loading, role }: MessageType) => {
 const ChatSection = ({
   messages,
   loading,
+  showConfirmButtons,
 }: {
   messages: MessageType[];
   loading: boolean;
+  showConfirmButtons: React.ReactElement | null;
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -81,7 +90,18 @@ const ChatSection = ({
                 loading={message.loading}
               />
             ))}
-            {loading && <Message content="generating..." loading={loading} role="bot" />}
+            {loading && (
+              <Message content="generating..." loading={loading} role="bot" />
+            )}
+
+            {showConfirmButtons && (
+              <Message
+                ui={showConfirmButtons}
+                content=""
+                role="bot"
+                loading={false}
+              />
+            )}
 
             <div ref={messagesEndRef} />
           </div>
