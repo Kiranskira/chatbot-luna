@@ -4,13 +4,17 @@ import ChatInput from "../components/chat-input";
 import ChatSection from "../components/chat-section";
 import { ChatOptionType, MessageType } from "../types";
 import EmptyChat from "../components/empty-chat";
+import { useAuth } from "../hooks/useAuth";
 
 const ChatPage = () => {
   const [inputText, setInputText] = useState<string>("");
   const [chatOption, setChatOption] = useState<ChatOptionType>(null);
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const [loading, setLoading] = useState(false)
-  const [showConfirmButtons, setShowConfirmButtons] = useState<React.ReactElement | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [showConfirmButtons, setShowConfirmButtons] =
+    useState<React.ReactElement | null>(null);
+
+  const { user } = useAuth();
 
   return (
     <div className=" w-full h-screen flex">
@@ -18,9 +22,9 @@ const ChatPage = () => {
         <div className=" flex flex-col gap-6">
           <button>
             <img
-              className=" w-8 h-8 rounded-full"
-              src="https://github.com/shadcn.png"
-              alt=" avatar"
+              className="w-8 h-8 rounded-full"
+              src={user?.image}
+              alt="avatar"
             />
           </button>
           <button>
@@ -39,9 +43,13 @@ const ChatPage = () => {
 
         <div className=" flex-1 flex overflow-y-auto hide-scrollbar">
           {messages.length > 0 ? (
-            <ChatSection showConfirmButtons={showConfirmButtons} loading={loading} messages={messages} />
+            <ChatSection
+              showConfirmButtons={showConfirmButtons}
+              loading={loading}
+              messages={messages}
+            />
           ) : (
-            <EmptyChat />
+            <EmptyChat userName={user.displayName} />
           )}
         </div>
 
@@ -57,7 +65,7 @@ const ChatPage = () => {
             setShowConfirmButtons={setShowConfirmButtons}
           />
 
-          {/* <a href="http://localhost:3000/auth/google">login</a> */}
+          <a href="http://localhost:3000/auth/google">login</a>
         </div>
       </div>
     </div>
