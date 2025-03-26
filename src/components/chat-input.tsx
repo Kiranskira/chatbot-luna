@@ -7,6 +7,7 @@ import {
   Mail,
   Bot,
   SquareTerminal,
+  Loader,
 } from "lucide-react";
 import { ChatOptionType, MessageType } from "../types";
 import { twMerge } from "tailwind-merge";
@@ -23,6 +24,7 @@ type ChatInputProps = {
   setShowConfirmButtons?: React.Dispatch<
     React.SetStateAction<React.ReactElement | null>
   >;
+  setBotMessage?: React.Dispatch<React.SetStateAction<string>>;
 };
 
 const ChatInput = ({
@@ -33,6 +35,7 @@ const ChatInput = ({
   setMessages,
   setLoading,
   setShowConfirmButtons,
+  setBotMessage,
 }: ChatInputProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
@@ -40,7 +43,7 @@ const ChatInput = ({
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(0); // Default to the first option
   const [apiUrl, setApiUrl] = useState("http://localhost:3000/chat");
-  const [command, setCommand] = useState("");
+  const [commandLoading, setCommandLoading] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -118,6 +121,7 @@ const ChatInput = ({
   const executeCommand = async (command: string) => {
     console.log("Executing command:", command);
     try {
+      setCommandLoading(true);
       const response = await fetch("http://localhost:3000/command/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -132,6 +136,8 @@ const ChatInput = ({
     } catch (error) {
       console.error(error);
       setMessageStatus("Command execution failed.");
+    } finally {
+      setCommandLoading(false);
     }
   };
 
@@ -225,29 +231,7 @@ const ChatInput = ({
             { role: "bot", content: botMessage, loading: false },
           ]);
 
-          if (chatOption === "commands & scripts") {
-            setCommand(botMessage);
-            setShowConfirmButtons(
-              <div className="flex flex-col gap-4 border border-gray-300 p-5 rounded-xl bg-white shadow-md w-full max-w-md">
-                <h1 className="text-base font-semibold text-gray-900">
-                  Would you like to execute the command?
-                </h1>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => executeCommand(botMessage)}
-                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all"
-                  >
-                    Yes
-                  </button>
-                  <button className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-all">
-                    No
-                  </button>
-                </div>
-              </div>
-            );
-          }
+          setBotMessage(botMessage);
         } catch (error) {
           console.error("Text submission error:", error);
           setMessageStatus("Message submission failed.");

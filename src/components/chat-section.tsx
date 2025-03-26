@@ -8,9 +8,9 @@ const Message = ({
   content,
   loading,
   role,
-  ui,
+  botMessage,
   chatOption,
-}: MessageType & { ui?: React.ReactElement; chatOption: ChatOptionType }) => {
+}: MessageType & { botMessage?: string; chatOption?: ChatOptionType }) => {
   const [emailData, setEmailData] = useState<{
     subject: string;
     body: string;
@@ -19,6 +19,8 @@ const Message = ({
   const [recipientEmailAddress, setRecipientEmailAddress] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [commandLoading, setCommandLoading] = useState(false);
+  const [commadExecuted, setCommadExecuted] = useState(false);
 
   const { user } = useAuth();
 
@@ -39,6 +41,32 @@ const Message = ({
       }
     }
   }, [chatOption, content]);
+
+  console.log(botMessage);
+
+  const executeCommand = async (command: string) => {
+    console.log("Executing command:", command);
+    try {
+      setCommandLoading(true);
+      const response = await fetch("http://localhost:3000/command/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command }),
+      });
+
+      if (!response.ok) throw new Error("Command execution failed.");
+
+      const data = await response.json();
+
+      setCommadExecuted(data.success);
+
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCommandLoading(false);
+    }
+  };
 
   const sendEmail = async (
     subject: string,
@@ -133,10 +161,12 @@ const Message = ({
                     />
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="flex gap-3">
                     {emailSent ? (
-                      <button disabled className="flex-1 bg-green-700 text-white px-4 py-2 rounded-lg transition-all">
+                      <button
+                        disabled
+                        className="flex-1 bg-green-700 text-white px-4 py-2 rounded-lg transition-all"
+                      >
                         Email Sent
                       </button>
                     ) : (
@@ -171,9 +201,51 @@ const Message = ({
                 </div>
               </div>
             ) : (
-              <Markdown>{content}</Markdown>
+              <>
+                <Markdown>{content}</Markdown>
+                {chatOption === "commands & scripts" && role !== "user" && (
+                  <div className="flex flex-col gap-4 border border-gray-300 p-5 rounded-xl bg-white shadow-md w-full max-w-md">
+                    <h1 className="text-base font-semibold text-gray-900">
+                      Would you like to execute the command?
+                    </h1>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      {commadExecuted ? (
+                        <button
+                          disabled
+                          className="flex-1 bg-green-700 text-white px-4 py-2 rounded-lg transition-all"
+                        >
+                          Command executed
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            disabled={commandLoading}
+                            onClick={() => executeCommand(botMessage)}
+                            className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all"
+                          >
+                            {commandLoading ? (
+                              <div className="flex h-fit items-center justify-center gap-2">
+                                <p>Executing...</p>
+                                <Loader className="animate-spin" />
+                              </div>
+                            ) : (
+                              "Yes"
+                            )}
+                          </button>
+                          <button className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-all">
+                            No
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
+
           {role === "user" && (
             <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
               <img className=" w-11" src="/avatar" alt="avatar" />
@@ -181,7 +253,6 @@ const Message = ({
           )}
         </>
       )}
-      {ui && ui}
     </div>
   );
 };
@@ -189,12 +260,12 @@ const Message = ({
 const ChatSection = ({
   messages,
   loading,
-  showConfirmButtons,
+  botMessage,
   chatOption,
 }: {
   messages: MessageType[];
   loading: boolean;
-  showConfirmButtons: React.ReactElement | null;
+  botMessage: string;
   chatOption: ChatOptionType;
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -228,19 +299,11 @@ const ChatSection = ({
                 role={message.role}
                 loading={message.loading}
                 chatOption={chatOption}
+                botMessage={botMessage}
               />
             ))}
             {loading && (
               <Message content="generating..." loading={loading} role="bot" />
-            )}
-
-            {showConfirmButtons && (
-              <Message
-                ui={showConfirmButtons}
-                content=""
-                role="bot"
-                loading={false}
-              />
             )}
 
             <div ref={messagesEndRef} />

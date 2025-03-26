@@ -12,9 +12,8 @@ const ChatPage = () => {
   const [chatOption, setChatOption] = useState<ChatOptionType>(null);
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showConfirmButtons, setShowConfirmButtons] =
-    useState<React.ReactElement | null>(null);
   const [settingsModel, setSettingsModel] = useState(false);
+  const [botMessage, setBotMessage] = useState("")
 
   const { user } = useAuth();
 
@@ -46,7 +45,7 @@ const ChatPage = () => {
         <div className=" flex-1 flex overflow-y-auto hide-scrollbar">
           {messages.length > 0 ? (
             <ChatSection
-              showConfirmButtons={showConfirmButtons}
+            botMessage={botMessage}
               loading={loading}
               messages={messages}
               chatOption={chatOption}
@@ -65,7 +64,7 @@ const ChatPage = () => {
             messages={messages}
             setMessages={setMessages}
             setLoading={setLoading}
-            setShowConfirmButtons={setShowConfirmButtons}
+            setBotMessage={setBotMessage}
           />
         </div>
       </div>
