@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { baseURL } from '../constants'
 
 export const useAuth = () => {
   const [user, setUser] = useState(() => {
@@ -17,7 +18,7 @@ export const useAuth = () => {
 
     const fetchUser = async () => {
       try {
-        const res = await fetch("http://localhost:3000/auth/me", {
+        const res = await fetch(`${baseURL}/auth/me`, {
           credentials: "include",
           signal,
         });

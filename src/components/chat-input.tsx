@@ -12,6 +12,7 @@ import {
 import { ChatOptionType, MessageType } from "../types";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "../hooks/useAuth";
+import { baseURL } from "../constants";
 
 type ChatInputProps = {
   inputText: string;
@@ -42,7 +43,7 @@ const ChatInput = ({
   const [messageStatus, setMessageStatus] = useState<string>("");
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number>(0); // Default to the first option
-  const [apiUrl, setApiUrl] = useState("http://localhost:3000/chat");
+  const [apiUrl, setApiUrl] = useState(`${baseURL}/chat`);
   const [commandLoading, setCommandLoading] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -106,40 +107,15 @@ const ChatInput = ({
 
   useEffect(() => {
     if (chatOption === "send-email") {
-      setApiUrl("http://localhost:3000/email/generate-email");
+      setApiUrl(`${baseURL}/email/generate-email`);
     } else if (chatOption === "assistance") {
-      setApiUrl("http://localhost:3000/chat");
+      setApiUrl(`${baseURL}/chat`);
     } else if (chatOption === "commands & scripts") {
-      setApiUrl("http://localhost:3000/command");
+      setApiUrl(`${baseURL}/command`);
     } else if (chatOption === "file") {
-      setApiUrl("http://localhost:3000/file-chat");
+      setApiUrl(`${baseURL}/file-chat`);
     }
   }, [chatOption]);
-
-  console.log(apiUrl);
-
-  const executeCommand = async (command: string) => {
-    console.log("Executing command:", command);
-    try {
-      setCommandLoading(true);
-      const response = await fetch("http://localhost:3000/command/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command }),
-      });
-
-      if (!response.ok) throw new Error("Command execution failed.");
-
-      const data = await response.json();
-
-      console.log(data);
-    } catch (error) {
-      console.error(error);
-      setMessageStatus("Command execution failed.");
-    } finally {
-      setCommandLoading(false);
-    }
-  };
 
   // Handle form submission
   const handleFileUpload = async (file: File) => {
@@ -147,7 +123,8 @@ const ChatInput = ({
     formData.append("file", file);
 
     try {
-      const response = await fetch(`http://localhost:3000/upload`, {
+      setUploading(true);
+      const response = await fetch(`${baseURL}/upload`, {
         method: "POST",
         body: formData,
       });
@@ -160,6 +137,8 @@ const ChatInput = ({
     } catch (error) {
       console.error("File upload error:", error);
       setMessageStatus("Failed to upload file.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -413,7 +392,11 @@ const ChatInput = ({
               disabled={uploading}
               className="ml-auto p-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400"
             >
-              <Send className="w-5 h-5 text-white" />
+              {uploading ? (
+                <Loader className="animate-spin" />
+              ) : (
+                <Send className="w-5 h-5 text-white" />
+              )}
             </button>
           </div>
 

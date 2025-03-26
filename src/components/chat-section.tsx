@@ -3,6 +3,7 @@ import Markdown from "react-markdown";
 import { ChatOptionType, MessageType } from "../types";
 import { useAuth } from "../hooks/useAuth";
 import { Loader } from "lucide-react";
+import { baseURL } from "../constants";
 
 const Message = ({
   content,
@@ -48,7 +49,7 @@ const Message = ({
     console.log("Executing command:", command);
     try {
       setCommandLoading(true);
-      const response = await fetch("http://localhost:3000/command/execute", {
+      const response = await fetch(`${baseURL}/command/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command }),
@@ -82,7 +83,7 @@ const Message = ({
     });
     try {
       setEmailLoading(true);
-      const response = await fetch("http://localhost:3000/email/send", {
+      const response = await fetch(`${baseURL}/email/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 import React from "react";
 import { User, Palette, Settings as SettingsIcon, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { baseURL } from "../../constants";
 
 const Settings = ({
   setSettingsModel,
@@ -8,6 +9,22 @@ const Settings = ({
   setSettingsModel: React.Dispatch<React.SetStateAction<boolean>>,
 }) => {
   const { user } = useAuth();
+
+  const logout = async () => {
+    try {
+      await fetch(`${baseURL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+    } catch (error) {
+      console.log(error);
+    }
+    localStorage.removeItem("user");
+    window.location.reload();
+  }
 
   return (
     <div className="w-full h-full bg-black bg-opacity-50 fixed top-0 left-0 z-50">
@@ -57,13 +74,13 @@ const Settings = ({
                     <p className="text-gray-500">{user.email}</p>
                   </div>
                 </div>
-                <button className="mt-4 text-black p-1 px-10 rounded-full flex gap-2 border border-black text-base">
+                <button onClick={logout} className="mt-4 text-black p-1 px-10 rounded-full flex gap-2 border border-black text-base">
                   Sign out
                 </button>
               </div>
             ) : (
               <div className="flex items-center justify-center mt-10">
-                <a href="http://localhost:3000/auth/google">
+                <a href={`${baseURL}/auth/google`}>
                   <button className=" text-black p-2 px-10 rounded-full flex gap-2 border border-black text-base">
                     <img src="/google.svg" alt="google" />
                     Sign in with Google
