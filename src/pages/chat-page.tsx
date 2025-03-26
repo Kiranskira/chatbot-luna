@@ -5,6 +5,7 @@ import ChatSection from "../components/chat-section";
 import { ChatOptionType, MessageType } from "../types";
 import EmptyChat from "../components/empty-chat";
 import { useAuth } from "../hooks/useAuth";
+import SettingsModel from "../components/model/settings";
 
 const ChatPage = () => {
   const [inputText, setInputText] = useState<string>("");
@@ -13,6 +14,7 @@ const ChatPage = () => {
   const [loading, setLoading] = useState(false);
   const [showConfirmButtons, setShowConfirmButtons] =
     useState<React.ReactElement | null>(null);
+  const [settingsModel, setSettingsModel] = useState(false);
 
   const { user } = useAuth();
 
@@ -31,7 +33,7 @@ const ChatPage = () => {
             <CirclePlus strokeWidth={1} size={32} className=" text-gray-500" />
           </button>
         </div>
-        <button>
+        <button onClick={() => setSettingsModel(true)}>
           <Settings strokeWidth={1} size={32} className=" text-gray-500" />
         </button>
       </div>
@@ -47,9 +49,10 @@ const ChatPage = () => {
               showConfirmButtons={showConfirmButtons}
               loading={loading}
               messages={messages}
+              chatOption={chatOption}
             />
           ) : (
-            <EmptyChat userName={user.displayName} />
+            <EmptyChat userName={user?.displayName} />
           )}
         </div>
 
@@ -64,10 +67,10 @@ const ChatPage = () => {
             setLoading={setLoading}
             setShowConfirmButtons={setShowConfirmButtons}
           />
-
-          <a href="http://localhost:3000/auth/google">login</a>
         </div>
       </div>
+
+      {settingsModel && <SettingsModel setSettingsModel={setSettingsModel} />}
     </div>
   );
 };

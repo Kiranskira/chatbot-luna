@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { ChatOptionType, MessageType } from "../types";
 import { twMerge } from "tailwind-merge";
+import { useAuth } from "../hooks/useAuth";
 
 type ChatInputProps = {
   inputText: string;
@@ -44,6 +45,8 @@ const ChatInput = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { user } = useAuth();
+
   // List of options to display when `/` is typed
   const options: {
     label: string;
@@ -68,6 +71,12 @@ const ChatInput = ({
       value: "commands & scripts",
       icon: <SquareTerminal size={28} strokeWidth={1} />,
       description: "Execute commands and scripts",
+    },
+    {
+      label: "File upload",
+      value: "file",
+      icon: <FileText size={28} strokeWidth={1} />,
+      description: "Upload files and chat",
     },
   ];
 
@@ -94,16 +103,19 @@ const ChatInput = ({
 
   useEffect(() => {
     if (chatOption === "send-email") {
-      setApiUrl("http://localhost:3000/email");
+      setApiUrl("http://localhost:3000/email/generate-email");
     } else if (chatOption === "assistance") {
       setApiUrl("http://localhost:3000/chat");
     } else if (chatOption === "commands & scripts") {
       setApiUrl("http://localhost:3000/command");
+    } else if (chatOption === "file") {
+      setApiUrl("http://localhost:3000/file-chat");
     }
   }, [chatOption]);
 
-  const executeCommand = async (command: string) => {
+  console.log(apiUrl);
 
+  const executeCommand = async (command: string) => {
     console.log("Executing command:", command);
     try {
       const response = await fetch("http://localhost:3000/command/execute", {
@@ -116,8 +128,7 @@ const ChatInput = ({
 
       const data = await response.json();
 
-      console.log(data)
-
+      console.log(data);
     } catch (error) {
       console.error(error);
       setMessageStatus("Command execution failed.");
@@ -125,10 +136,31 @@ const ChatInput = ({
   };
 
   // Handle form submission
+  const handleFileUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`http://localhost:3000/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("File upload failed.");
+
+      const data = await response.json();
+      setMessageStatus("File uploaded successfully.");
+      console.log("File upload response:", data);
+    } catch (error) {
+      console.error("File upload error:", error);
+      setMessageStatus("Failed to upload file.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setMessageStatus(""); // Reset message status
+    setMessageStatus("");
 
     if (!inputText.trim() && !file) {
       setMessageStatus("Please enter text or select a file.");
@@ -137,84 +169,89 @@ const ChatInput = ({
     }
 
     if (file) {
-      console.log("File selected:", file.name);
-      const formData = new FormData();
-      formData.append("pdf", file);
-
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          body: formData, // Send the file
-        });
-
-        if (!response.ok) throw new Error("File upload failed.");
-
-        const data = await response.json();
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "bot",
-            content: data?.response?.kwargs?.content,
-            loading: false,
-          },
-        ]);
-      } catch (error) {
-        console.error(error);
-        setMessageStatus("File upload failed.");
-      }
+      await handleFileUpload(file);
+      setFile(null);
     } else {
-      // Handling text input submission
       setMessages((prev) => [
         ...prev,
         { role: "user", content: inputText, loading: false },
       ]);
 
-      try {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ task: inputText }),
-        });
+      if (chatOption === "send-email") {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user?.refreshToken}`,
+            },
+            body: JSON.stringify({ task: inputText }),
+          });
 
-        setInputText("");
+          if (!response.ok) throw new Error("Message submission failed.");
 
-        if (!response.ok) throw new Error("Message submission failed.");
+          const data = await response.json();
+          const botMessage =
+            data?.response?.kwargs?.content || "No response from the server.";
 
-        const data = await response.json();
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "bot",
-            content: data?.response?.kwargs?.content,
-            loading: false,
-          },
-        ]);
+          setMessages((prev) => [
+            ...prev,
+            { role: "bot", content: botMessage, loading: false },
+          ]);
 
-        console.log("command => ", command)
+          setInputText("");
+        } catch (error) {
+          console.error("Text submission error:", error);
+          setMessageStatus("Message submission failed.");
+        }
+      } else {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task: inputText }),
+          });
 
-        if (chatOption === "commands & scripts") {
-          setCommand(data?.response?.kwargs?.content);
-          setShowConfirmButtons(
-            <>
-              <div className="flex flex-col gap-2 border-2 border-gray-300 p-4 rounded-lg">
-                <h1 className="text-sm font-semibold text-gray-800">
+          setInputText("");
+
+          if (!response.ok) throw new Error("Message submission failed.");
+
+          const data = await response.json();
+          const botMessage =
+            data?.response?.kwargs?.content || "No response from the server.";
+
+          setMessages((prev) => [
+            ...prev,
+            { role: "bot", content: botMessage, loading: false },
+          ]);
+
+          if (chatOption === "commands & scripts") {
+            setCommand(botMessage);
+            setShowConfirmButtons(
+              <div className="flex flex-col gap-4 border border-gray-300 p-5 rounded-xl bg-white shadow-md w-full max-w-md">
+                <h1 className="text-base font-semibold text-gray-900">
                   Would you like to execute the command?
                 </h1>
-                <div className="flex gap-2">
-                  <button onClick={() => executeCommand(command)} className="flex-1 bg-gray-300 px-3 py-1 rounded-md hover:bg-gray-400">
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => executeCommand(botMessage)}
+                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all"
+                  >
                     Yes
                   </button>
-                  <button className="flex-1 bg-gray-300 px-3 py-1 rounded-md hover:bg-gray-400">
+                  <button className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-all">
                     No
                   </button>
                 </div>
               </div>
-            </>
-          );
+            );
+          }
+        } catch (error) {
+          console.error("Text submission error:", error);
+          setMessageStatus("Message submission failed.");
         }
-      } catch (error) {
-        console.error(error);
-        setMessageStatus("Message submission failed.");
       }
     }
 
@@ -346,44 +383,47 @@ const ChatInput = ({
           </div>
 
           <div className="flex items-center gap-4 mt-4">
-            <div className="flex gap-11">
-              <input
-                type="file"
-                id="fileInput"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={handleFileChange}
-                accept="application/pdf"
-              />
+            {chatOption === "file" ? (
+              <div className="flex gap-11">
+                <input
+                  type="file"
+                  id="fileInput"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept="application/pdf"
+                />
 
-              {!file && (
-                <button
-                  type="button"
-                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-base"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <CirclePlus strokeWidth={2} className="w-4 h-4" />
-                  Add Attachments
-                </button>
-              )}
-
-              {file && (
-                <div className="relative border p-2 rounded-lg h-fit flex items-center gap-2 bg-slate-200 cursor-pointer hover:shadow-md">
-                  <FileText className="text-red-600" />
-                  <h1 className="text-sm font-bold text-gray-800">
-                    {file.name}
-                  </h1>
+                {!file && (
                   <button
                     type="button"
-                    className="p-[2px] border rounded-full absolute top-[-8px] right-[-8px] bg-white hover:bg-red-600 hover:text-white transition-colors"
-                    onClick={handleRemoveFile}
+                    className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-base"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    <X className="size-3" />
+                    <CirclePlus strokeWidth={2} className="w-4 h-4" />
+                    Add Attachments
                   </button>
-                </div>
-              )}
-            </div>
+                )}
 
+                {file && (
+                  <div className="relative border p-2 rounded-lg h-fit flex items-center gap-2 bg-slate-200 cursor-pointer hover:shadow-md">
+                    <FileText className="text-red-600" />
+                    <h1 className="text-sm font-bold text-gray-800">
+                      {file.name}
+                    </h1>
+                    <button
+                      type="button"
+                      className="p-[2px] border rounded-full absolute top-[-8px] right-[-8px] bg-white hover:bg-red-600 hover:text-white transition-colors"
+                      onClick={handleRemoveFile}
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div />
+            )}
             <button
               type="submit"
               disabled={uploading}

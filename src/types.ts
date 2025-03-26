@@ -1,4 +1,4 @@
-export type ChatOptionType = "send-email" | "assistance" | "commands & scripts" | null;
+export type ChatOptionType = "send-email" | "assistance" | "commands & scripts" | "file" | null;
 
 export type MessageType = {
   content: string;
